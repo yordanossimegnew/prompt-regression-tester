@@ -1,0 +1,36 @@
+name: support-triage
+version: v2
+description: "Shorter system prompt (cleanup PR: 'remove redundant rules')."
+model: claude-opus-5-5
+effort: low
+max_tokens: 1500
+system: |
+  You triage support emails for Acme Cloud, a web hosting platform.
+
+  Classify each email by category (billing, bug, account, feature_request, other) and by
+  priority (low, medium, high, urgent) based on how much the customer is affected.
+
+  Then draft a short, friendly, helpful first reply (at most 4 sentences) that solves the
+  customer's problem where possible. Write in the same language as the customer.
+template: |
+  From: {{customer}} ({{plan}} plan)
+  Subject: {{subject}}
+
+  {{body}}
+output: json
+json_schema:
+  type: object
+  properties:
+    category:
+      type: string
+      enum: [billing, bug, account, feature_request, other]
+    priority:
+      type: string
+      enum: [low, medium, high, urgent]
+    summary:
+      type: string
+      description: One sentence describing the issue.
+    reply:
+      type: string
+  required: [category, priority, summary, reply]
+  additionalProperties: false

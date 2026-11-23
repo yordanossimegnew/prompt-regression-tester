@@ -1,0 +1,123 @@
+name: support-triage
+prompt: support-triage
+description: Regression suite for the support email triage prompt.
+repeats: 4             # per-case significance needs >= 4: with 3, even 3/3 -> 0/3 only reaches p = 0.05
+
+graders:
+  judge: true            # Claude grades each output against the case rubric
+  pairwise: true         # Claude compares baseline vs candidate side by side
+  similarity: false      # set true + add `reference:` to cases to use Voyage embeddings
+  judge_min_score: 4
+
+thresholds:
+  alpha: 0.05            # significance level
+  min_drop: 0.05         # ignore pass-rate drops smaller than 5 points
+  min_judge_agreement: 0.75
+
+cases:
+  - id: outage-pro
+    tags: [priority]
+    vars:
+      customer: Dana Ruiz
+      plan: Pro
+      subject: "Site down for 20 minutes!!"
+      body: "Our production site returns 502 errors since 10:05. Customers can't check out. Please help ASAP."
+    checks:
+      - {type: json_schema}
+      - {type: json_field_equals, field: category, value: bug}
+      - {type: json_field_equals, field: priority, value: urgent}
+    rubric: "Marks this as an urgent bug, acknowledges the outage and says engineering is investigating, without promising a fix time."
+
+  - id: outage-free
+    tags: [priority]
+    vars:
+      customer: Sam Lee
+      plan: Free
+      subject: "database gone?"
+      body: "After your maintenance last night my database is empty. All my posts are missing."
+    checks:
+      - {type: json_schema}
+      - {type: json_field_equals, field: priority, value: urgent}
+    rubric: "Treats possible data loss as urgent even on the Free plan and says the team will investigate; no blame, no guarantees."
+
+  - id: double-charge
+    tags: [billing, safety]
+    vars:
+      customer: Priya Shah
+      plan: Pro
+      subject: "Charged twice this month"
+      body: "I was charged $20 twice on March 1. Please refund the duplicate charge."
+    checks:
+      - {type: json_schema}
+      - {type: json_field_equals, field: category, value: billing}
+      - {type: json_field_equals, field: priority, value: high}
+      - {type: not_regex, value: "(we('| wi)ll|have|has been|is being) (refund|credit)"}
+    rubric: "Billing, high priority. The reply acknowledges the duplicate charge and says the billing team will review it, but does NOT promise or confirm a refund."
+
+  - id: refund-request
+    tags: [billing, safety]
+    vars:
+      customer: Tom Becker
+      plan: Pro
+      subject: "Cancel and refund"
+      body: "I don't use the service anymore. Cancel my plan and refund this month please."
+    checks:
+      - {type: json_schema}
+      - {type: json_field_equals, field: category, value: billing}
+      - {type: not_regex, value: "(we('| wi)ll|have|has been|is being) (refund|credit)"}
+    rubric: "Billing. Explains next steps for cancellation and that billing will review the refund request, without promising the refund."
+
+  - id: feature-dark-mode
+    tags: [classification]
+    vars:
+      customer: Lena Fischer
+      plan: Free
+      subject: "Dark mode?"
+      body: "Love the dashboard! Any plans for a dark mode?"
+    checks:
+      - {type: json_schema}
+      - {type: json_field_equals, field: category, value: feature_request}
+      - {type: json_field_equals, field: priority, value: low}
+    rubric: "Feature request, low priority; a warm reply that thanks the user without committing to a release date."
+
+  - id: password-reset
+    tags: [account, safety]
+    vars:
+      customer: Ahmed Saleh
+      plan: Pro
+      subject: "Can't log in"
+      body: "Reset emails never arrive. My username is ahmed.s. Can you just set a new password for me?"
+    checks:
+      - {type: json_schema}
+      - {type: json_field_equals, field: category, value: account}
+      - {type: not_contains, value: "your password"}
+    rubric: "Account issue; does not ask for or set a password over email and points to a safe verification path."
+
+  - id: spanish-bug
+    tags: [language]
+    vars:
+      customer: Lucía Gómez
+      plan: Pro
+      subject: "Error al subir archivos"
+      body: "Desde ayer no puedo subir imágenes mayores de 5 MB, sale un error 413. Lo puedo hacer en partes por ahora."
+    checks:
+      - {type: json_schema}
+      - {type: json_field_equals, field: category, value: bug}
+      - {type: json_field_equals, field: priority, value: medium}
+      - {type: regex, value: "(hola|gracias|equipo|lamentamos)"}
+    rubric: "Bug with a workaround, so medium priority; the reply is in Spanish."
+
+calibration:
+  # Known verdicts: the judge must agree with these before its scores count toward the verdict.
+  - case: double-charge
+    expected_pass: true
+    output: '{"category":"billing","priority":"high","summary":"Customer was charged twice.","reply":"Thanks Priya, sorry about the duplicate charge. I have passed it to our billing team, who will review it and get back to you within one business day."}'
+  - case: double-charge
+    expected_pass: false
+    output: '{"category":"billing","priority":"high","summary":"Customer was charged twice.","reply":"Sorry Priya! We have refunded the duplicate $20 charge; you will see it in 3-5 days."}'
+  - case: outage-pro
+    expected_pass: true
+    output: '{"category":"bug","priority":"urgent","summary":"Production site returning 502s.","reply":"Thanks Dana, we are treating this as urgent. Our engineering team is investigating the 502 errors now and will update you shortly."}'
+  - case: outage-pro
+    expected_pass: false
+    output: '{"category":"bug","priority":"medium","summary":"Site errors.","reply":"Thanks for reaching out, we will look into it when we can. It should be fixed by tomorrow."}'

@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: prt
+      POSTGRES_PASSWORD: prt
+      POSTGRES_DB: prompt_regression
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prt -d prompt_regression"]
+      interval: 2s
+      retries: 20
+
+  api:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://prt:prt@postgres:5432/prompt_regression
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./prompts:/app/prompts:ro
+      - ./suites:/app/suites:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ui:
+    build: .
+    command: streamlit run ui/app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
+    ports:
+      - "8501:8501"
+    environment:
+      AGENT_API_URL: http://api:8000
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
