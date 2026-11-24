@@ -1,5 +1,7 @@
 # Prompt Regression Tester
 
+[![tests](https://github.com/yordanossimegnew/prompt-regression-tester/actions/workflows/tests.yml/badge.svg)](https://github.com/yordanossimegnew/prompt-regression-tester/actions/workflows/tests.yml)
+
 Unit tests for prompts. Keep prompts and test suites as YAML in git. When someone edits a
 prompt, run the suite on the old and new versions, and get a **statistically grounded verdict**
 (pass, regression or improvement) before the change ships. The CLI exits non-zero on a
