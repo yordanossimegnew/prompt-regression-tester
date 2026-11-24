@@ -21,7 +21,12 @@ from src.utils import load_settings, setup_logging
 
 settings = load_settings()
 setup_logging(settings.log_level, settings.log_dir)
-app = create_app(settings)
+
+
+def __getattr__(name):  # `uvicorn main:app` builds the app on first use, so the CLI never needs a database at import
+    if name == "app":
+        return create_app(settings)
+    raise AttributeError(name)
 
 GREEN, RED, YELLOW, BOLD, DIM, RESET = "\033[32m", "\033[31m", "\033[33m", "\033[1m", "\033[2m", "\033[0m"
 
@@ -117,7 +122,7 @@ def main() -> None:
         sys.exit(cmd_validate())
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=getattr(args, "port", 8000))
+    uvicorn.run(create_app(settings), host="0.0.0.0", port=getattr(args, "port", 8000))
 
 
 if __name__ == "__main__":
