@@ -7,8 +7,17 @@ import json
 import pytest
 
 from src.api import resolve_versions
-from src.tools import (Check, PromptSpec, SpecError, bootstrap_diff, fisher_greater, fisher_less, load_prompt,
-                       run_check, sign_test_less)
+from src.tools import (
+    Check,
+    PromptSpec,
+    SpecError,
+    bootstrap_diff,
+    fisher_greater,
+    fisher_less,
+    load_prompt,
+    run_check,
+    sign_test_less,
+)
 from src.utils.config import PROJECT_ROOT
 
 PROMPTS = PROJECT_ROOT / "prompts"

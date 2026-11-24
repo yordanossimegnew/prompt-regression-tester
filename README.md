@@ -1,6 +1,6 @@
 # Prompt Regression Tester
 
-[![tests](https://github.com/yordanossimegnew/prompt-regression-tester/actions/workflows/tests.yml/badge.svg)](https://github.com/yordanossimegnew/prompt-regression-tester/actions/workflows/tests.yml)
+[![tests](https://github.com/yordanossimegnew/prompt-regression-tester/actions/workflows/tests.yml/badge.svg)](https://github.com/yordanossimegnew/prompt-regression-tester/actions/workflows/tests.yml) ![Python 3.12](https://img.shields.io/badge/python-3.12-blue) [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 Unit tests for prompts. Keep prompts and test suites as YAML in git. When someone edits a
 prompt, run the suite on the old and new versions, and get a **statistically grounded verdict**
@@ -18,6 +18,13 @@ Built with **LangGraph** (four parallel fan-outs: calibrate, generate, grade, pa
 | Verdict | What changed (side by side) | Prompt diff |
 |---|---|---|
 | ![Verdict](docs/screenshots/verdict.png) | ![Changed](docs/screenshots/what-changed.png) | ![Diff](docs/screenshots/prompt-diff.png) |
+
+## Engineering highlights
+
+- Each prompt version is scored three ways: deterministic checks, a calibrated LLM judge, and pairwise comparison with alternating positions to cancel position bias.
+- Verdicts are statistically tested (Fisher's exact, sign test, bootstrap), so noise isn't reported as a regression.
+- The CLI exits non-zero on a regression, and the included GitHub Actions workflow blocks the pull request.
+- Worked example: a "harmless cleanup" prompt edit that the suite catches.
 
 ## The example: a "harmless cleanup" that breaks production
 
